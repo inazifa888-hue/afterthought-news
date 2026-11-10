@@ -1,8 +1,10 @@
 <!doctype html>
 <html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Afterthought News Card Maker</title>
+<link rel="preload" as="font" type="font/woff2" href="https://banglawebfonts.pages.dev/fonts/bornomala/bornomala-regular.woff2" crossorigin="anonymous">
+<link href="https://banglawebfonts.pages.dev/css/bornomala.css" rel="stylesheet">
 <style>
-*{box-sizing:border-box}body{margin:0;background:#eef2f5;color:#172033;font-family:system-ui,"Noto Sans Bengali",sans-serif}header{background:#063b2c;color:white;padding:14px 16px;font-weight:700;font-size:19px}
+*{box-sizing:border-box}body{margin:0;background:#eef2f5;color:#172033;font-family:"Bornomala",serif}header{background:#063b2c;color:white;padding:14px 16px;font-weight:700;font-size:19px}
 main{max-width:1180px;margin:16px auto;padding:0 12px;display:grid;grid-template-columns:310px minmax(0,1fr);gap:14px}
 .panel,.preview{background:white;border:1px solid #dce3e9;border-radius:14px;padding:14px;box-shadow:0 2px 10px #1720330c}
 h3{font-size:16px;margin:2px 0 10px}label{display:block;font-size:13px;color:#526174;margin:10px 0 5px}
@@ -21,7 +23,7 @@ button{border:0;border-radius:8px;padding:10px 12px;background:#08784c;color:whi
 <label>শিরোনাম লিখুন</label><input id="headline" type="text" placeholder="নিউজের শিরোনাম লিখুন">
 <div class="tools"><button id="addHeadline">শিরোনাম বসান</button><button class="alt" id="addText">অন্য লেখা</button></div>
 <label>নির্বাচিত লেখার রং</label><input id="color" type="color" value="#ffffff">
-<div class="row"><div><label>লেখার সাইজ</label><input id="size" type="number" min="12" max="120" value="42"></div><div><label>ফন্ট</label><select id="font"><option value="sans-serif">বাংলা Sans</option><option value="serif">বাংলা Serif</option><option value="Arial">Arial</option></select></div></div>
+<div class="row"><div><label>লেখার সাইজ</label><input id="size" type="number" min="12" max="120" value="42"></div><div><label>ফন্ট</label><select id="font"><option value="Bornomala" selected>বর্ণমালা (Bornomala)</option><option value="sans-serif">বাংলা Sans</option><option value="serif">বাংলা Serif</option><option value="Arial">Arial</option></select></div></div>
 <div class="tools"><button class="alt" id="bold">Bold চালু/বন্ধ</button><button class="alt" id="front">সামনে আনুন</button><button class="red" id="del">নির্বাচিত মুছুন</button></div>
 <hr style="border:0;border-top:1px solid #e5e9ef;margin:14px 0">
 <h3>কার্ডের লেখা</h3>
@@ -42,14 +44,27 @@ const BG_SRC="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACjMAAAzACAYAAACMqGlt
 const c=document.getElementById('c'),ctx=c.getContext('2d');let bg=new Image(),items=[],selected=-1,drag=null,footer="“বিস্তারিত কমেন্টে”";
 const $=id=>document.getElementById(id);
 bg.onload=draw;bg.src=BG_SRC;
+document.fonts.ready.then(()=>draw());
 function add(o){items.push(o);selected=items.length-1;draw()}
-function addText(text,x=55,y=650){add({type:'text',text,x,y,size:42,color:'#ffffff',font:'sans-serif',bold:true})}
+function addText(text,x=55,y=650){add({type:'text',text,x,y,size:42,color:'#ffffff',font:'Bornomala',bold:true})}
 function bounds(o){if(o.type==='text'){ctx.font=`${o.bold?'bold':''} ${o.size}px ${o.font}`;let lines=o.text.split('\n');return{x:o.x,y:o.y,w:Math.max(100,...lines.map(t=>ctx.measureText(t).width)),h:lines.length*o.size*1.28}}return{x:o.x,y:o.y,w:o.w,h:o.h}}
 function draw(){
  ctx.clearRect(0,0,c.width,c.height);if(bg.complete)ctx.drawImage(bg,0,0,c.width,c.height);
+ // Automatic Bangladesh date above the top-right line and weekday below it.
+ const now = new Date();
+ const dateText = new Intl.DateTimeFormat('bn-BD',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Dhaka'}).format(now);
+ const dayText = new Intl.DateTimeFormat('bn-BD',{weekday:'long',timeZone:'Asia/Dhaka'}).format(now);
+ ctx.save();
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffffff';
+ ctx.shadowColor='rgba(0,0,0,.75)';ctx.shadowBlur=5;ctx.shadowOffsetX=1;ctx.shadowOffsetY=2;
+ ctx.font='bold 25px Bornomala, serif';
+ ctx.fillText(dateText,952,43,245);
+ ctx.font='bold 24px Bornomala, serif';
+ ctx.fillText(dayText,952,108,245);
+ ctx.restore();
  // Repaint the angled red footer label so its wording is editable.
  ctx.save();ctx.fillStyle='#f00008';ctx.beginPath();ctx.moveTo(410,1305);ctx.lineTo(690,1305);ctx.lineTo(650,1354);ctx.lineTo(410,1354);ctx.closePath();ctx.fill();
- ctx.fillStyle='#fff';ctx.font='bold 39px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(footer,550,1330,260);ctx.restore();
+ ctx.fillStyle='#fff';ctx.font='bold 39px Bornomala, serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(footer,550,1330,260);ctx.restore();
  // Main news photo stays inside the black central panel, clear of the circular logo.
  items.forEach((o,i)=>{ctx.save();if(o.type==='image'){ctx.drawImage(o.img,o.x,o.y,o.w,o.h)}else if(o.type==='text'){ctx.font=`${o.bold?'bold':''} ${o.size}px ${o.font}`;ctx.fillStyle=o.color;ctx.textBaseline='top';o.text.split('\n').forEach((t,j)=>ctx.fillText(t,o.x,o.y+j*o.size*1.28))}ctx.restore();
  if(i===selected){let b=bounds(o);ctx.save();ctx.strokeStyle='#20a4ff';ctx.lineWidth=4;ctx.setLineDash([10,7]);ctx.strokeRect(b.x,b.y,b.w,b.h);ctx.setLineDash([]);ctx.fillStyle='#20a4ff';ctx.fillRect(b.x+b.w-16,b.y+b.h-16,32,32);ctx.restore()}
