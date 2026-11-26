@@ -2,7 +2,9 @@
 <html lang="bn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f6a37">
 <link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css">
 <link rel="stylesheet" href="https://fonts.maateen.me/adorsho-lipi/font.css">
 <title>ফটোকার্ড মেকার</title>
@@ -208,6 +210,11 @@ textarea#headline { height: 52px; }
 header h1 { font-size: 17px; font-weight: 800; letter-spacing: .2px; display: inline-flex; align-items: center; gap: 8px; margin: 0; }
 header h1::before { content: ""; width: 5px; height: 18px; border-radius: 3px; background: linear-gradient(180deg, var(--rd) 0 50%, var(--gn) 50% 100%); }
 .grid { margin-top: 10px; }
+/* সব ডিভাইসের জন্য: আইফোনে ফোকাসে জুম বন্ধ, ল্যাপটপে একটু বড় লেখা, নচ/হোম বারের জায়গা */
+@supports (-webkit-touch-callout: none) { input, select, textarea { font-size: 16px !important; } #srchBox input[type=text] { height: 32px !important; } }
+@media (min-width: 1100px) { .wrap { zoom: 1.08; } }
+@media (pointer: coarse) { button, .btn-like, .chk { touch-action: manipulation; } }
+body { padding-bottom: max(40px, calc(env(safe-area-inset-bottom, 0px) + 20px)); -webkit-tap-highlight-color: transparent; }
 .panel { border-radius: 14px; box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--line) 70%, transparent); }
 .field > label, .field > .lbl, .lrow label, .rowx > .lbl, .sizebar > .lbl {
   font-size: 12px; font-weight: 700; letter-spacing: .3px; color: var(--gn); display: inline-flex; align-items: center; gap: 6px;
@@ -249,6 +256,7 @@ input[type=range], .chk input { accent-color: var(--gn); }
 <div class="wrap">
   <header>
     <h1>ফটোকার্ড মেকার</h1>
+    <a href="index.html" id="portalLink" style="font-size:12.5px;font-weight:700;color:var(--gn);text-decoration:none">← নিউজ পোর্টাল</a>
     <p>ছবি, শিরোনাম আর সূত্রের নাম দিন। কার্ড সঙ্গে সঙ্গে তৈরি হবে।</p>
   </header>
 
@@ -259,7 +267,29 @@ input[type=range], .chk input { accent-color: var(--gn); }
           <label class="file mini" for="photos"><input type="file" id="photos" accept="image/*" multiple><span class="btn-like">ছবি বাছাই</span></label>
           <label class="file mini" for="vidFile"><input type="file" id="vidFile" accept="video/*"><span class="btn-like">ভিডিও বাছাই</span></label>
           <label class="chk"><input type="checkbox" id="autoFit" checked> অটো সেট</label>
+          <button type="button" class="ghost" id="srchBtn" aria-expanded="false" aria-controls="srchBox">🔎 অনলাইনে খুঁজুন</button>
           <button type="button" class="ghost" id="clearPhotos" hidden>সব সরান</button>
+        </div>
+        <div id="srchBox" hidden>
+          <style>
+            #srchBox { border: 1px solid var(--line); border-radius: 10px; padding: 5px 6px; margin-top: 4px; display: flex; flex-direction: column; gap: 3px; background: var(--tint); font-size: 11.5px; }
+            #srchBox .rowx { gap: 4px; } #srchBox button { padding: 1px 8px !important; font-size: 11.5px !important; min-height: 0 !important; line-height: 1.5 !important; box-shadow: none !important; } #srchBox input[type=text] { padding: 2px 8px; font-size: 12px; min-height: 0; height: 26px; }
+            #srchBox[hidden] { display: none; }
+            #srchBox .chips { display: flex; flex-wrap: wrap; gap: 3px; }
+            #srchBox .chips button { padding: 0 7px; font-size: 11px; }
+            #srchBox input[type=text] { flex: 1; min-width: 0; }
+            #srchBox .sgrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; max-height: 190px; overflow: auto; }
+            #srchBox .sgrid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 5px; cursor: pointer; display: block; background: #0002; }
+            #srchBox .sgrid img.busy { opacity: .4; }
+            #srchBox .sm { font-size: 10.5px; color: var(--muted); margin: 0; line-height: 1.3; }
+          </style>
+          <div class="rowx" id="pxKeyRow"><input type="text" id="pxKey" placeholder="Pixabay API key (একবার বসান)" autocomplete="off" aria-label="Pixabay API key"><button type="button" class="ghost" id="pxKeySave">সেভ</button><a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener" class="sm">key কোথায় পাবেন?</a></div>
+          <div class="rowx" id="pxKeyOk" hidden><span class="sm">✓ key সেভ আছে</span><button type="button" class="ghost" id="pxKeyChange">key বদলান</button></div>
+          <div class="chips" id="pxChips"></div>
+          <div class="rowx"><input type="text" id="pxQ" placeholder="ইংরেজিতে লিখুন, যেমন: mosque" aria-label="খোঁজার শব্দ"><button type="button" class="ghost" id="pxGo">খুঁজুন</button></div>
+          <div class="sgrid" id="pxGrid"></div>
+          <div class="rowx"><button type="button" class="ghost" id="pxMore" hidden>আরও ছবি</button><span class="sm" id="pxMsg" role="status"></span></div>
+          <p class="sm">ছবির উৎস: <a href="https://pixabay.com" target="_blank" rel="noopener">Pixabay</a> (বিনামূল্যে ব্যবহারযোগ্য)</p>
         </div>
         <div class="names" id="fileNames">কোনো ছবি বাছাই করা হয়নি</div>
         <div class="names" id="vidName">ভিডিও নিউজের জন্য (ঐচ্ছিক)</div>
@@ -319,8 +349,18 @@ input[type=range], .chk input { accent-color: var(--gn); }
         <div class="swatches tpls" id="tpls">
           <label class="swatch"><input type="radio" name="tpl" value="overlay" checked><span>ওভারলে</span></label>
           <label class="swatch"><input type="radio" name="tpl" value="gframe"><span>গ্রিন ফ্রেম</span></label>
+          <label class="swatch"><input type="radio" name="tpl" value="morning"><span>শুভ সকাল</span></label>
         </div>
         <button type="button" class="ghost" id="moreBtn" aria-expanded="false" aria-controls="moreFields">আরও অপশন ▾</button>
+      </div>
+
+      <div class="more-fields" id="gmBox" hidden style="margin-top:6px">
+        <p class="hint" id="gmHint">শুভ সকাল কার্ড: তারিখ (বার, বাংলা, ইংরেজি, হিজরি) নিজে থেকে বসে। ওপরের শিরোনামের ঘরে লিখলে "শুভ সকাল"-এর জায়গায় সেটি বসবে, ছোট লেখার ঘরে লিখলে "আপনার দিনটি শুভ হোক"-এর জায়গায় সেটি বসবে।</p>
+        <div class="rowx">
+          <span class="lbl">তারিখ</span><input type="date" id="gmDate" aria-label="তারিখ (খালি = আজ)" style="flex:1;min-width:120px">
+          <span class="lbl">হিজরি</span><select id="gmAdj" aria-label="হিজরি তারিখ"><option value="-1">১ দিন আগে</option><option value="0" selected>ঠিক আছে</option><option value="1">১ দিন পরে</option></select>
+        </div>
+        <div class="rowx"><textarea id="gmCap" readonly rows="2" style="flex:1;min-height:0" aria-label="ফেসবুক ক্যাপশন"></textarea><button type="button" class="ghost" id="gmCp">ক্যাপশন কপি</button></div>
       </div>
 
       <div class="more-fields" id="moreFields" hidden>
@@ -495,6 +535,63 @@ input[type=range], .chk input { accent-color: var(--gn); }
     syncVideoUI(imgs.length > 0 && imgs[0].tagName === "VIDEO");
     syncPos();
   }
+  /* ---------- অনলাইনে ছবি খোঁজা (Pixabay) ---------- */
+  (function () {
+    var PX = "pc-pixabay-key", page = 1, lastQ = "", busy = false;
+    var CH = [["ইসলামিক", "islamic mosque"], ["মসজিদ", "mosque"], ["সকাল", "morning sunrise"], ["গ্রীষ্ম", "summer"], ["বর্ষা", "monsoon rain"], ["শরৎ", "autumn"], ["শীত", "winter fog"], ["বসন্ত", "spring flowers"], ["প্রকৃতি", "nature landscape"], ["আকাশ", "sky clouds"], ["ফুল", "flowers"], ["ধানক্ষেত", "rice field"], ["গ্রাম", "village"]];
+    var key = ""; try { key = localStorage.getItem(PX) || ""; } catch (e) {}
+    function m(s) { $("pxMsg").textContent = s || ""; }
+    function sync() { $("pxKeyRow").hidden = !!key; $("pxKeyOk").hidden = !key; }
+    CH.forEach(function (c) { var b = document.createElement("button"); b.type = "button"; b.className = "ghost"; b.textContent = c[0]; b.addEventListener("click", function () { $("pxQ").value = c[1]; run(true); }); $("pxChips").appendChild(b); });
+    $("srchBtn").addEventListener("click", function () { var h = $("srchBox").hidden; $("srchBox").hidden = !h; this.setAttribute("aria-expanded", String(h)); if (h) sync(); });
+    $("pxKeySave").addEventListener("click", function () {
+      var v = $("pxKey").value.trim();
+      if (!v) { m("key-র ঘরটি খালি।"); return; }
+      var f = v.match(/\d{6,}-[0-9a-f]{15,}/i);   // লিংক বা বাড়তি লেখার ভেতর থেকেও key বের করে নেয়
+      if (!f) { m("এটি key নয়। Pixabay API পাতার ‘Your API key’ লেখা কোডটি দিন (দেখতে এমন: 12345678-abcdef…), লিংক নয়।"); return; }
+      key = f[0]; try { localStorage.setItem(PX, key); } catch (e) {} $("pxKey").value = ""; sync(); m("key সেভ হয়েছে ✓ এবার ওপরের বোতাম চাপুন।");
+    });
+    $("pxKeyChange").addEventListener("click", function () { key = ""; try { localStorage.removeItem(PX); } catch (e) {} $("pxKey").value = ""; sync(); m(""); });
+    $("pxGo").addEventListener("click", function () { run(true); });
+    $("pxQ").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); run(true); } });
+    $("pxMore").addEventListener("click", function () { run(false); });
+    function run(fresh) {
+      var q = $("pxQ").value.trim();
+      if (!key) { sync(); m("আগে Pixabay API key বসিয়ে সেভ করুন।"); return; }
+      if (!q) { m("খোঁজার শব্দ লিখুন বা ওপরের বোতাম চাপুন।"); return; }
+      if (busy) return; busy = true;
+      if (fresh) { page = 1; lastQ = q; $("pxGrid").innerHTML = ""; } else page++;
+      m("খোঁজা হচ্ছে…");
+      var url = "https://pixabay.com/api/?key=" + encodeURIComponent(key) + "&q=" + encodeURIComponent(lastQ) + "&image_type=photo&safesearch=true&per_page=24&order=popular&page=" + page;
+      fetch(url).then(function (r) { if (r.status === 400 || r.status === 401 || r.status === 403) throw { bad: true }; if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+        var hits = j.hits || [];
+        hits.forEach(function (h) {
+          var im = document.createElement("img"); im.src = h.webformatURL || h.previewURL; im.alt = h.tags || ""; im.loading = "lazy";
+          im.addEventListener("click", function () { pick(h, im); });
+          $("pxGrid").appendChild(im);
+        });
+        $("pxMore").hidden = hits.length < 24;
+        m(hits.length ? "ছবিতে চাপলে কার্ডে বসবে।" : (fresh ? "কোনো ছবি পাওয়া যায়নি, অন্য শব্দ দিন।" : "আর ছবি নেই।"));
+      }).catch(function (e) {
+        m(e && e.bad ? "key ঠিক নয়। সঠিক key বসিয়ে আবার চেষ্টা করুন।" : "ছবি আনা যায়নি। ইন্টারনেট দেখুন, আর মনে রাখবেন এই সুবিধা শুধু GitHub-এ আপলোড করা সাইটে চলে।");
+        if (e && e.bad) { key = ""; try { localStorage.removeItem(PX); } catch (x) {} sync(); }
+      }).then(function () { busy = false; });
+    }
+    function pick(h, el) {
+      m("ছবি আনা হচ্ছে…"); el.classList.add("busy");
+      fetch(h.largeImageURL || h.webformatURL).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+        var f = new File([b], "pixabay-" + h.id + ".jpg", { type: b.type || "image/jpeg" });
+        var dt = new DataTransfer(); dt.items.add(f);
+        $("photos").files = dt.files; $("photos").dispatchEvent(new Event("change"));
+        m("ছবি যোগ হয়েছে ✓ (সূত্র: Pixabay)");
+      }).catch(function () {
+        m("ছবিটি সরাসরি আনা যায়নি। ");
+        var a = document.createElement("a"); a.href = h.pageURL; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Pixabay-তে খুলে ডাউনলোড করে ‘ছবি বাছাই’ দিয়ে দিন"; $("pxMsg").appendChild(a);
+      }).then(function () { el.classList.remove("busy"); });
+    }
+    sync();
+  })();
+
   $("clearPhotos").addEventListener("click", function () { imgs = []; renderThumbs(); schedule(); });
   $("photos").addEventListener("change", function (e) {
     var files = Array.prototype.slice.call(e.target.files || []);
@@ -903,9 +1000,22 @@ input[type=range], .chk input { accent-color: var(--gn); }
     $("vRec").textContent = "ভিডিও ডাউনলোড করুন";
     if (abort) setProg(null);
   }
+  var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  // আইফোন/আইপ্যাডে ফাইল সরাসরি শেয়ার-শিটে যায়: সেখান থেকে ছবিতে সেভ বা ফেসবুকে পাঠানো যায়
+  function shareFile(b, name) {
+    try {
+      var f = new File([b], name, { type: b.type || "application/octet-stream" });
+      if (IOS && navigator.canShare && navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f] }).then(function () { $("msg").textContent = "হয়ে গেছে ✓"; }, function () { $("msg").textContent = "শেয়ার বাতিল হয়েছে।"; });
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
   function saveBlob(b, name) {
     var m = $("msg");
     var viaPlain = function () {
+      if (shareFile(b, name)) return;
       var a = document.createElement("a");
       a.href = URL.createObjectURL(b); a.download = name;
       document.body.appendChild(a); a.click(); a.remove();
@@ -1264,6 +1374,84 @@ input[type=range], .chk input { accent-color: var(--gn); }
     pushOut();
   }
 
+  /* ---------- শুভ সকাল টেমপ্লেট ---------- */
+  var GM_WD = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+  var GM_G = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+  var GM_B = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"];
+  var GM_BS = [[4, 14], [5, 15], [6, 15], [7, 16], [8, 16], [9, 16], [10, 17], [11, 16], [12, 16], [1, 15], [2, 14], [3, 15]];
+  var GM_H = ["মুহাররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জমাদিউল আউয়াল", "জমাদিউস সানি", "রজব", "শাবান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ"];
+  function gmBn(n) { return String(n).replace(/\d/g, function (d) { return "০১২৩৪৫৬৭৮৯"[d]; }); }
+  var gmCache = {};
+  function gmInfo(dateStr, adj) {
+    var key = (dateStr || "") + "|" + adj + "|" + (dateStr ? "" : new Date().toDateString());
+    if (gmCache[key]) return gmCache[key];
+    var tt = dateStr ? new Date(dateStr + "T06:00:00Z") : new Date();
+    var p = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka", year: "numeric", month: "2-digit", day: "2-digit" }).format(tt).split("-");
+    var gy = +p[0], gm = +p[1], gd = +p[2], u = Date.UTC(gy, gm - 1, gd);
+    var idx = -1, start = 0, yc = 0, i, yy, s;
+    for (yy = gy - 1; yy <= gy; yy++) for (i = 0; i < 12; i++) { s = Date.UTC(yy, GM_BS[i][0] - 1, GM_BS[i][1]); if (s <= u && s >= start) { idx = i; start = s; yc = yy; } }
+    var by = yc - (idx >= 9 ? 594 : 593), bd = Math.round((u - start) / 86400000) + 1;
+    var h = new Date(u + 6 * 3600000 + adj * 86400000), hp = {};
+    new Intl.DateTimeFormat("en-u-ca-islamic-civil", { timeZone: "UTC", day: "numeric", month: "numeric", year: "numeric" }).formatToParts(h).forEach(function (x) { hp[x.type] = x.value; });
+    return (gmCache[key] = {
+      wd: "আজ " + GM_WD[new Date(u).getUTCDay()],
+      bangla: gmBn(bd) + " " + GM_B[idx] + " " + gmBn(by),
+      eng: gmBn(gd) + " " + GM_G[gm - 1] + " " + gmBn(gy),
+      hijri: gmBn(hp.day) + " " + GM_H[(+hp.month) - 1] + " " + gmBn(parseInt(hp.year, 10))
+    });
+  }
+  function drawMorning() {
+    var inf = gmInfo($("gmDate").value, +$("gmAdj").value);
+    var greet = plain($("headline").value.trim().split("\n")[0] || "") || "শুভ সকাল";
+    var wish = plain($("sub").value.trim().split("\n")[0] || "") || "আপনার দিনটি শুভ হোক";
+    var brand = $("brand").value.trim(), credit = $("credit").value.trim(), R = 1045, F = "'BornomalaEmbed','Hind Siliguri',sans-serif";
+    ctx.clearRect(0, 0, S, S);
+    if (imgs.length) { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, S, S); photoLayout(imgs.length, S, S).forEach(function (r, i) { cover(imgs[i], r[0], r[1], r[2], r[3]); }); }
+    else placeholder(0, 0, S, S, "এখানে আপনার ছবি বসবে");
+    var gr = ctx.createLinearGradient(0, 620, 0, S); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.6)");
+    ctx.fillStyle = gr; ctx.fillRect(0, 620, S, S - 620);
+    var tg = ctx.createLinearGradient(0, 0, 0, 190); tg.addColorStop(0, "rgba(0,0,0,.38)"); tg.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = tg; ctx.fillRect(0, 0, S, 190);
+    ctx.fillStyle = "#e10b1f"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(46, 0); ctx.lineTo(0, 46); ctx.closePath(); ctx.fill();
+    ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.font = "700 50px " + F;
+    var gw = ctx.measureText(greet).width + 36;
+    ctx.fillStyle = "#e10b1f"; ctx.fillRect(R - gw, 662, gw, 58); ctx.fillStyle = "#fff"; ctx.fillText(greet, R - gw + 18, 693);
+    var ww = ctx.measureText(wish).width + 36;
+    ctx.fillStyle = "rgba(92,92,98,.82)"; ctx.fillRect(R - ww, 735, ww, 60); ctx.fillStyle = "#fff"; ctx.fillText(wish, R - ww + 18, 767);
+    ctx.save();
+    ctx.font = "700 40px " + F; ctx.textAlign = "right"; ctx.shadowColor = "rgba(0,0,0,.65)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2; ctx.fillStyle = "#fff";
+    [inf.wd, inf.bangla, inf.eng, inf.hijri].forEach(function (x, i) { ctx.fillText(x, R - 5, 862 + i * 58); });
+    ctx.restore();
+    ctx.save();
+    var cy = 84, lr = 44, lx = S - 46 - lr;   // লোগো ওপরে ডান পাশে
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    if (brand) {   // ওভারলের মতো নামের চিপ: লাল→সবুজ লেখা, সাদা কিনারা
+      ctx.font = "700 32px " + F;
+      var tw = ctx.measureText(brand).width, cw = tw + 40, bx = 58, tx = bx + 20;   // নাম ওপরে বাঁ পাশে
+      ctx.fillStyle = "rgba(0,0,0,.34)"; rrect(bx, cy - 27, cw, 54, 13); ctx.fill();
+      var ng = ctx.createLinearGradient(tx, 0, tx + tw, 0);
+      ng.addColorStop(0, "#d3142f"); ng.addColorStop(0.42, "#e0203a"); ng.addColorStop(0.58, "#12a455"); ng.addColorStop(1, "#0a7a3d");
+      ctx.lineJoin = "round"; ctx.lineWidth = 7; ctx.strokeStyle = "rgba(255,255,255,.96)"; ctx.strokeText(brand, tx, cy + 1);
+      ctx.fillStyle = ng; ctx.fillText(brand, tx, cy + 1);
+    }
+    if (LOGO.complete && LOGO.naturalWidth) {   // লোগো: সাদা বৃত্ত, রিং ও ছায়া দিয়ে আলাদা করে ফোটানো
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(lx, cy, lr + 5, 0, 7); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.arc(lx, cy, lr, 0, 7); ctx.clip(); ctx.fillStyle = "#fff"; ctx.fillRect(lx - lr, cy - lr, lr * 2, lr * 2);
+      ctx.drawImage(LOGO, lx - lr, cy - lr, lr * 2, lr * 2); ctx.restore();
+      var rg = ctx.createLinearGradient(lx - lr, cy, lx + lr, cy); rg.addColorStop(0, "#c8102e"); rg.addColorStop(1, "#0f6a37");
+      ctx.lineWidth = 3.5; ctx.strokeStyle = rg; ctx.beginPath(); ctx.arc(lx, cy, lr + 2, 0, 7); ctx.stroke();
+    }
+    ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 8; ctx.fillStyle = "#fff"; ctx.textAlign = "left";
+    if (credit) { ctx.font = "400 22px " + F; ctx.textBaseline = "alphabetic"; ctx.fillText(credit, 46, 1060); }
+    ctx.restore(); ctx.textBaseline = "alphabetic";
+    $("gmCap").value = greet + "! " + wish + "।\n" + inf.wd + ", " + inf.bangla + " বঙ্গাব্দ | " + inf.eng + " | " + inf.hijri + " হিজরি";
+    pushOut();
+  }
+  function syncMorning() { var m = document.querySelector('input[name="tpl"]:checked').value === "morning"; $("gmBox").hidden = !m; }
+  ["gmDate", "gmAdj"].forEach(function (id) { $(id).addEventListener("input", function () { schedule(); }); $(id).addEventListener("change", function () { schedule(); }); });
+  $("gmCp").addEventListener("click", function () { var v = $("gmCap").value; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () { $("msg").textContent = "ক্যাপশন কপি হয়েছে ✓"; }, function () { $("gmCap").select(); }); });
+  $("tpls").addEventListener("change", syncMorning);
+
   function draw() {
     curCy = 0.5;
     var t = theme();
@@ -1284,6 +1472,7 @@ input[type=range], .chk input { accent-color: var(--gn); }
     var src = $("source").value.trim();
     var brand = $("brand").value.trim();
     if (tpl === "overlay") { drawOverlay(t, head, src, brand); return; }
+    if (tpl === "morning") { drawMorning(); return; }
 
     if (!touched.bc) $("bc").value = t.band;
     var bwid = parseInt($("bw").value, 10) || 0, bcol = $("bc").value;
@@ -1477,6 +1666,7 @@ input[type=range], .chk input { accent-color: var(--gn); }
       cv.toBlob(function (b) {
         if (!b) { m.textContent = fail; return; }
         var viaPlain = function () {
+          if (shareFile(b, "photocard.png")) return;
           var a = document.createElement("a");
           a.href = URL.createObjectURL(b); a.download = "photocard.png";
           document.body.appendChild(a); a.click(); a.remove();
